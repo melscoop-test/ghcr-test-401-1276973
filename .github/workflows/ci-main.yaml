@@ -15,15 +15,7 @@
 #   ########################################################################
 
 name: ci-main
-on:
-  push:
-    branches:
-      - "main"
-      - "develop"
-  pull_request:
-    branches:
-      - "main"
-      - "develop"
+on: workflow_dispatch
 jobs:
   meta:
     runs-on: ubuntu-latest
@@ -75,15 +67,15 @@ jobs:
         id: matrix
         uses: splunk/addonfactory-test-matrix-action@v1
 
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#  security:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@master
+#      - name: Run Snyk to check for vulnerabilities
+#        uses: snyk/actions/node@master
+#        continue-on-error: true
+#        env:
+#          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
   build_action:
     runs-on: ubuntu-latest
     name: Build Action
@@ -106,7 +98,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push action
         id: docker_action_build
         uses: docker/build-push-action@v2
@@ -123,19 +115,19 @@ jobs:
             REVISION=${{ needs.meta.outputs.container_revision }}
           cache-from: type=registry,ref=${{ needs.meta.outputs.container_base }}
           cache-to: type=inline
-      - name: Run Snyk to check Docker image for vulnerabilities
+#      - name: Run Snyk to check Docker image for vulnerabilities
         # Snyk can be used to break the build when it detects vulnerabilities.
         # In this case we want to upload the issues to GitHub Code Scanning
-        continue-on-error: true
-        uses: snyk/actions/docker@master
-        env:
+#        continue-on-error: true
+#        uses: snyk/actions/docker@master
+#        env:
           # In order to use the Snyk Action you will need to have a Snyk API token.
           # More details in https://github.com/snyk/actions#getting-your-snyk-token
           # or you can signup for free at https://snyk.io/login
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: ${{needs.meta.outputs.sc4s}}
-          args: --file=package/Dockerfile
+#          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#        with:
+#          image: ${{needs.meta.outputs.sc4s}}
+#          args: --file=package/Dockerfile
 
   test-container:
     runs-on: ubuntu-latest
@@ -226,4 +218,4 @@ jobs:
             @semantic-release/git
             @google/semantic-release-replace-plugin
         env:
-          GITHUB_TOKEN: ${{ secrets.GHCR_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
